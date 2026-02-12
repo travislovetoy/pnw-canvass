@@ -68,3 +68,42 @@ def push_lead_to_uisp(lead):
         return client_id, None
     except requests.RequestException as e:
         return None, str(e)
+
+
+def update_client_in_uisp(uisp_client_id, lead, designation=None):
+    """Update an existing UISP client record with current lead/visit info."""
+    base = current_app.config["UISP_BASE_URL"].rstrip("/")
+    token = current_app.config["UISP_API_TOKEN"]
+    if not token or not uisp_client_id:
+        return None
+
+    service_type = lead.get("service_type", "")
+    service_tier = lead.get("service_tier", "")
+
+    note = f"Source: PNW Canvass | Stage: {lead['pipeline_stage']}"
+    if designation:
+        # Convert key to readable label
+        desig_label = designation.replace("_", " ").title()
+        note += f" | Designation: {desig_label}"
+    if service_type:
+        service_label = service_type.capitalize()
+        if service_tier and service_tier != "wireless":
+            service_label += f" - {service_tier}"
+        note += f" | Service: {service_label}"
+    if lead.get("notes"):
+        note += f"\n{lead['notes']}"
+
+    payload = {"note": note}
+
+    try:
+        resp = requests.patch(
+            f"{base}/clients/{uisp_client_id}",
+            json=payload,
+            headers={"x-auth-token": token},
+            timeout=10,
+            verify=True,
+        )
+        resp.raise_for_status()
+        return resp.json()
+    except requests.RequestException:
+        return None

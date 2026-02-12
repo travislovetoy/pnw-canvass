@@ -7,7 +7,14 @@ const tMap = new mapboxgl.Map({
     zoom: 8,
 });
 
-tMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+tMap.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+
+tMap.addControl(new MapboxGeocoder({
+    accessToken: MAPBOX_TOKEN,
+    mapboxgl: mapboxgl,
+    placeholder: 'Search address or city',
+    collapsed: true,
+}), 'top-right');
 
 // Geolocate on load (same pattern as main map)
 if (navigator.geolocation) {

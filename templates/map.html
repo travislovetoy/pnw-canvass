@@ -3,6 +3,8 @@
 {% block head %}
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.min.js"></script>
 {% endblock %}
 {% block content %}
 <div class="row g-0" style="height: calc(100vh - 70px);">
@@ -33,6 +35,14 @@
                     <div class="col-6"><input type="text" class="form-control form-control-sm" id="lead-city" placeholder="City" readonly></div>
                     <div class="col-3"><input type="text" class="form-control form-control-sm" id="lead-state" placeholder="ST" value="WA" readonly></div>
                     <div class="col-3"><input type="text" class="form-control form-control-sm" id="lead-zip" placeholder="Zip" readonly></div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small mb-0">Designation</label>
+                    <div id="desig-dropdown" class="desig-dropdown">
+                        <div id="desig-selected" class="desig-selected"></div>
+                        <div id="desig-options" class="desig-options"></div>
+                    </div>
+                    <input type="hidden" id="lead-designation">
                 </div>
                 <hr class="my-2">
                 <div class="row mb-2">

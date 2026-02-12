@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify, session
 from routes.auth import login_required
 from models.visit import get_all_visits, get_visit_by_id, create_visit, update_visit, delete_visit
+from models.lead import get_lead_by_id
+from services.uisp_client import update_client_in_uisp
 
 bp = Blueprint("api_visits", __name__, url_prefix="/api")
 
@@ -37,6 +39,13 @@ def edit_visit(visit_id):
         return jsonify({"error": "No data"}), 400
     update_visit(visit_id, data)
     visit = get_visit_by_id(visit_id)
+
+    # Sync designation change to UISP if visit has a synced lead
+    if "designation" in data and visit["lead_id"]:
+        lead = get_lead_by_id(visit["lead_id"])
+        if lead and lead["uisp_client_id"]:
+            update_client_in_uisp(lead["uisp_client_id"], dict(lead), data["designation"])
+
     return jsonify(dict(visit))
 
 

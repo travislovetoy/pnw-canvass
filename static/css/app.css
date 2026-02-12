@@ -78,3 +78,87 @@ body { font-size: 0.9rem; }
     overflow-y: auto;
     background: #fff;
 }
+
+/* ── Custom Designation Dropdown ── */
+.desig-dropdown {
+    position: relative;
+}
+.desig-selected {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    background: #fff;
+}
+.desig-selected::after {
+    content: '\25BC';
+    font-size: 0.6rem;
+    margin-left: auto;
+    color: #666;
+}
+.desig-selected .desig-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 2px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.desig-selected .desig-dot span {
+    font-size: 7px;
+    font-weight: 700;
+    line-height: 1;
+}
+.desig-options {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    max-height: 240px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.desig-options.open {
+    display: block;
+}
+.desig-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.desig-option:hover {
+    filter: brightness(0.9);
+}
+.desig-option .desig-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 2px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.desig-option .desig-dot span {
+    font-size: 7px;
+    font-weight: 700;
+    line-height: 1;
+}

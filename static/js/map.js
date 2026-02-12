@@ -48,6 +48,13 @@ function initMap(center, zoom) {
         maxZoom: 24,
     });
 
+    map.addControl(new MapboxGeocoder({
+        accessToken: MAPBOX_TOKEN,
+        mapboxgl: mapboxgl,
+        placeholder: 'Search address or city',
+        collapsed: true,
+    }), 'top-left');
+
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
     map.addControl(new mapboxgl.GeolocateControl({
         positionOptions: { enableHighAccuracy: true },
@@ -162,6 +169,8 @@ async function reverseGeocode(lat, lon) {
 
 /* ── Track all markers for cleanup ── */
 const markers = [];
+/* ── Map visit ID → { marker, visit } for marker swaps ── */
+const markerByVisitId = {};
 
 /* ── setupMapEvents: called after map is created from geolocation ── */
 function setupMapEvents() {
@@ -182,6 +191,7 @@ function setupMapEvents() {
                 openSidePanel(v);
             });
             markers.push(marker);
+            markerByVisitId[v.id] = { marker, visit: v };
         });
     }
 
@@ -253,6 +263,7 @@ function setupMapEvents() {
             openSidePanel(visit);
         });
         markers.push(marker);
+        markerByVisitId[visit.id] = { marker, visit };
     });
 
     loadVisits();
@@ -260,14 +271,21 @@ function setupMapEvents() {
 }
 
 /* ── Side Panel ── */
+let currentPanelVisitId = null;
+
 function openSidePanel(visit) {
     const panel = document.getElementById('side-panel');
     panel.style.width = '320px';
+    currentPanelVisitId = visit.id;
 
     document.getElementById('lead-lat').value = visit.lat;
     document.getElementById('lead-lon').value = visit.lon;
     document.getElementById('lead-visit-id').value = visit.id;
     document.getElementById('lead-lead-id').value = visit.lead_id || '';
+
+    // Set designation dropdown
+    setDesigSelected(visit.designation || 'not_home');
+    document.getElementById('desig-options').classList.remove('open');
 
     if (visit._addr) {
         document.getElementById('lead-street').value = visit._addr.street;
@@ -326,6 +344,79 @@ document.querySelectorAll('input[name="service_type"]').forEach(radio => {
         }
     });
 });
+
+/* ── Custom Designation Dropdown ── */
+function desigDotHTML(d) {
+    const tc = isLightColor(d.color) ? '#000' : '#fff';
+    return `<span class="desig-dot" style="background:${d.color};"><span style="color:${tc};">${d.symbol}</span></span>`;
+}
+
+function setDesigSelected(key) {
+    const d = desigMap[key] || desigMap['not_home'];
+    const selEl = document.getElementById('desig-selected');
+    const tc = isLightColor(d.color) ? '#000' : '#fff';
+    selEl.style.backgroundColor = d.color;
+    selEl.style.color = tc;
+    selEl.innerHTML = `${desigDotHTML(d)} ${d.label}`;
+    document.getElementById('lead-designation').value = key;
+}
+
+(function buildDesigDropdown() {
+    const opts = document.getElementById('desig-options');
+    DESIGNATIONS.forEach(d => {
+        const row = document.createElement('div');
+        row.className = 'desig-option';
+        row.dataset.key = d.key;
+        const tc = isLightColor(d.color) ? '#000' : '#fff';
+        row.style.backgroundColor = d.color;
+        row.style.color = tc;
+        row.innerHTML = `${desigDotHTML(d)} ${d.label}`;
+        row.addEventListener('click', () => selectDesig(d.key));
+        opts.appendChild(row);
+    });
+
+    document.getElementById('desig-selected').addEventListener('click', () => {
+        opts.classList.toggle('open');
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+        if (!document.getElementById('desig-dropdown').contains(e.target)) {
+            opts.classList.remove('open');
+        }
+    });
+})();
+
+async function selectDesig(key) {
+    document.getElementById('desig-options').classList.remove('open');
+    setDesigSelected(key);
+
+    const visitId = currentPanelVisitId;
+    if (!visitId) return;
+
+    await fetch(`/api/visits/${visitId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ designation: key }),
+    });
+
+    // Swap the marker on the map
+    const entry = markerByVisitId[visitId];
+    if (entry) {
+        const lngLat = entry.marker.getLngLat();
+        entry.marker.remove();
+        const el = createMarkerEl(key);
+        const newMarker = new mapboxgl.Marker({ element: el })
+            .setLngLat(lngLat)
+            .addTo(map);
+        entry.visit.designation = key;
+        el.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            openSidePanel(entry.visit);
+        });
+        entry.marker = newMarker;
+    }
+}
 
 /* ── Init ── */
 buildPinBar();
