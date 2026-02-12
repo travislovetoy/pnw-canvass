@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title_extra %} — Pipeline{% endblock %}
+{% block content %}
+<h5 class="mt-2">Lead Pipeline</h5>
+<div class="d-flex gap-3 overflow-auto pb-3" id="pipeline" style="min-height: calc(100vh - 120px);">
+    {% for stage, label in [('new_lead','New Lead'),('contacted','Contacted'),('quoted','Quoted'),('won','Won'),('lost','Lost')] %}
+    <div class="pipeline-col flex-shrink-0" style="width: 250px;">
+        <div class="card h-100">
+            <div class="card-header fw-bold">{{ label }} <span class="badge bg-secondary" id="count-{{ stage }}">0</span></div>
+            <div class="card-body p-2 pipeline-stage" id="stage-{{ stage }}" data-stage="{{ stage }}"
+                 style="min-height: 200px; overflow-y: auto;">
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pipeline.js') }}"></script>
+{% endblock %}

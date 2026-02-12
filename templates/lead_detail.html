@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title_extra %} — Lead Detail{% endblock %}
+{% block content %}
+<div class="row mt-3">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span id="lead-title">Lead #{{ lead_id }}</span>
+                <span id="sync-badge"></span>
+            </div>
+            <div class="card-body">
+                <form id="detail-form">
+                    <div class="row mb-2">
+                        <div class="col"><label class="form-label">First Name</label><input class="form-control" id="d-first"></div>
+                        <div class="col"><label class="form-label">Last Name</label><input class="form-control" id="d-last"></div>
+                    </div>
+                    <div class="mb-2"><label class="form-label">Street</label><input class="form-control" id="d-street"></div>
+                    <div class="row mb-2">
+                        <div class="col-5"><label class="form-label">City</label><input class="form-control" id="d-city"></div>
+                        <div class="col-3"><label class="form-label">State</label><input class="form-control" id="d-state"></div>
+                        <div class="col-4"><label class="form-label">Zip</label><input class="form-control" id="d-zip"></div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col"><label class="form-label">Phone</label><input class="form-control" id="d-phone"></div>
+                        <div class="col"><label class="form-label">Email</label><input class="form-control" id="d-email"></div>
+                    </div>
+                    <div class="mb-2"><label class="form-label">Service Tags</label><input class="form-control" id="d-tags"></div>
+                    <div class="row mb-2">
+                        <div class="col">
+                            <label class="form-label">Stage</label>
+                            <select class="form-select" id="d-stage">
+                                <option value="new_lead">New Lead</option>
+                                <option value="contacted">Contacted</option>
+                                <option value="quoted">Quoted</option>
+                                <option value="won">Won</option>
+                                <option value="lost">Lost</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label class="form-label">Organization</label>
+                            <select class="form-select" id="d-org">
+                                <option value="1">My Company</option>
+                                <option value="2">Gigafiber</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-2"><label class="form-label">Notes</label><textarea class="form-control" id="d-notes" rows="3"></textarea></div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-primary" id="btn-save-detail">Save</button>
+                        <button type="button" class="btn btn-warning" id="btn-retry-sync" style="display:none">Retry UISP Sync</button>
+                        <a class="btn btn-outline-secondary" href="{{ url_for('auth.leads_view') }}">Back</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Info</div>
+            <div class="card-body small" id="lead-info">Loading...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+const LEAD_ID = {{ lead_id }};
+
+async function loadLead() {
+    const r = await fetch(`/api/leads/${LEAD_ID}`);
+    const lead = await r.json();
+    document.getElementById('lead-title').textContent = `${lead.first_name} ${lead.last_name}`;
+    document.getElementById('d-first').value = lead.first_name;
+    document.getElementById('d-last').value = lead.last_name;
+    document.getElementById('d-street').value = lead.street1 || '';
+    document.getElementById('d-city').value = lead.city || '';
+    document.getElementById('d-state').value = lead.state || 'WA';
+    document.getElementById('d-zip').value = lead.zip || '';
+    document.getElementById('d-phone').value = lead.phone || '';
+    document.getElementById('d-email').value = lead.email || '';
+    document.getElementById('d-tags').value = lead.service_tags || '';
+    document.getElementById('d-stage').value = lead.pipeline_stage;
+    document.getElementById('d-org').value = lead.organization_id || 1;
+    document.getElementById('d-notes').value = lead.notes || '';
+
+    const syncBadge = document.getElementById('sync-badge');
+    const retryBtn = document.getElementById('btn-retry-sync');
+    if (lead.uisp_synced === 1) {
+        syncBadge.innerHTML = '<span class="badge bg-success">UISP Synced</span>';
+        retryBtn.style.display = 'none';
+    } else if (lead.uisp_synced === -1) {
+        syncBadge.innerHTML = '<span class="badge bg-danger">Sync Failed</span>';
+        retryBtn.style.display = '';
+    } else {
+        syncBadge.innerHTML = '<span class="badge bg-secondary">Not Synced</span>';
+        retryBtn.style.display = '';
+    }
+
+    let info = `<strong>ID:</strong> ${lead.id}<br>`;
+    info += `<strong>Created:</strong> ${lead.created_at}<br>`;
+    if (lead.lat && lead.lon) info += `<strong>Location:</strong> ${lead.lat.toFixed(5)}, ${lead.lon.toFixed(5)}<br>`;
+    if (lead.uisp_client_id) info += `<strong>UISP Client ID:</strong> ${lead.uisp_client_id}<br>`;
+    document.getElementById('lead-info').innerHTML = info;
+}
+
+document.getElementById('btn-save-detail').onclick = async () => {
+    await fetch(`/api/leads/${LEAD_ID}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            first_name: document.getElementById('d-first').value,
+            last_name: document.getElementById('d-last').value,
+            street1: document.getElementById('d-street').value,
+            city: document.getElementById('d-city').value,
+            state: document.getElementById('d-state').value,
+            zip: document.getElementById('d-zip').value,
+            phone: document.getElementById('d-phone').value,
+            email: document.getElementById('d-email').value,
+            service_tags: document.getElementById('d-tags').value,
+            pipeline_stage: document.getElementById('d-stage').value,
+            organization_id: parseInt(document.getElementById('d-org').value),
+            notes: document.getElementById('d-notes').value,
+        })
+    });
+    loadLead();
+};
+
+document.getElementById('btn-retry-sync').onclick = async () => {
+    const r = await fetch(`/api/leads/${LEAD_ID}/sync`, {method: 'POST'});
+    const data = await r.json();
+    if (data.ok) alert('Synced successfully!');
+    else alert('Sync failed: ' + (data.error || 'Unknown error'));
+    loadLead();
+};
+
+loadLead();
+</script>
+{% endblock %}

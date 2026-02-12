@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title_extra %} — Territories{% endblock %}
+{% block content %}
+<div class="row g-0" style="height: calc(100vh - 70px);">
+    <div class="col-md-8 col-lg-9">
+        <div id="territory-map" style="height: 100%;"></div>
+    </div>
+    <div class="col-md-4 col-lg-3 border-start overflow-auto p-2" style="height: calc(100vh - 70px);">
+        <h6>Territories</h6>
+        {% if session.get('is_admin') %}
+        <p class="small text-muted">Draw a polygon on the map, then fill in the form below.</p>
+        <form id="territory-form">
+            <input type="hidden" id="t-geojson">
+            <input type="hidden" id="t-edit-id">
+            <input type="text" class="form-control form-control-sm mb-2" id="t-name" placeholder="Name" required>
+            <input type="color" class="form-control form-control-sm mb-2" id="t-color" value="#3388ff">
+            <select class="form-select form-select-sm mb-2" id="t-rep">
+                <option value="">Unassigned</option>
+            </select>
+            <div class="d-flex gap-2 mb-3">
+                <button type="button" class="btn btn-primary btn-sm" id="btn-save-territory">Save</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-clear-territory">Clear</button>
+            </div>
+        </form>
+        <hr>
+        {% endif %}
+        <div id="territory-list"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/territory_draw.js') }}"></script>
+{% endblock %}

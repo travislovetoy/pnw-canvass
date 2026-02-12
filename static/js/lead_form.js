@@ -1,0 +1,81 @@
+/* ── Lead Form (inline side panel) ── */
+
+document.getElementById('btn-save-lead').onclick = async () => {
+    const first = document.getElementById('lead-first').value.trim();
+    const last = document.getElementById('lead-last').value.trim();
+    if (!first || !last) {
+        alert('First and Last name are required.');
+        return;
+    }
+
+    const visitId = document.getElementById('lead-visit-id').value;
+    const serviceType = document.querySelector('input[name="service_type"]:checked');
+    const svcType = serviceType ? serviceType.value : '';
+    let svcTier = '';
+    if (svcType === 'fiber') {
+        svcTier = document.getElementById('lead-tier').value;
+    } else if (svcType === 'wireless') {
+        svcTier = 'wireless';
+    }
+
+    const data = {
+        first_name: first,
+        last_name: last,
+        street1: document.getElementById('lead-street').value,
+        city: document.getElementById('lead-city').value,
+        state: document.getElementById('lead-state').value || 'WA',
+        zip: document.getElementById('lead-zip').value,
+        lat: parseFloat(document.getElementById('lead-lat').value),
+        lon: parseFloat(document.getElementById('lead-lon').value),
+        phone: document.getElementById('lead-phone').value,
+        email: document.getElementById('lead-email').value,
+        service_type: svcType,
+        service_tier: svcTier,
+        service_tags: svcType || '',
+        notes: document.getElementById('lead-notes').value,
+        organization_id: 1,
+    };
+
+    const statusEl = document.getElementById('lead-save-status');
+    statusEl.textContent = 'Saving...';
+    statusEl.className = 'small text-center mt-1 text-muted';
+
+    try {
+        const r = await fetch('/api/leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        const lead = await r.json();
+
+        // Link visit to lead
+        if (visitId) {
+            await fetch(`/api/visits/${visitId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lead_id: lead.id }),
+            });
+        }
+
+        if (lead.uisp_synced === 1) {
+            statusEl.textContent = 'Saved & synced to UISP!';
+            statusEl.className = 'small text-center mt-1 text-success';
+        } else if (lead.uisp_synced === -1) {
+            statusEl.textContent = 'Saved, but UISP sync failed.';
+            statusEl.className = 'small text-center mt-1 text-warning';
+        } else {
+            statusEl.textContent = 'Lead saved!';
+            statusEl.className = 'small text-center mt-1 text-success';
+        }
+
+        // Clear form for next entry
+        document.getElementById('lead-first').value = '';
+        document.getElementById('lead-last').value = '';
+        document.getElementById('lead-email').value = '';
+        document.getElementById('lead-phone').value = '';
+        document.getElementById('lead-notes').value = '';
+    } catch (e) {
+        statusEl.textContent = 'Error saving lead.';
+        statusEl.className = 'small text-center mt-1 text-danger';
+    }
+};

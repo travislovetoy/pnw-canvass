@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title_extra %} — Reps{% endblock %}
+{% block content %}
+<div class="row mt-3">
+    <div class="col-md-8">
+        <h5>Sales Reps</h5>
+        <table class="table table-sm table-striped" id="rep-table">
+            <thead><tr><th>ID</th><th>Username</th><th>Full Name</th><th>Admin</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header" id="rep-form-title">Add Rep</div>
+            <div class="card-body">
+                <form id="rep-form">
+                    <input type="hidden" id="r-edit-id">
+                    <input type="text" class="form-control form-control-sm mb-2" id="r-username" placeholder="Username" required>
+                    <input type="text" class="form-control form-control-sm mb-2" id="r-fullname" placeholder="Full Name" required>
+                    <input type="password" class="form-control form-control-sm mb-2" id="r-password" placeholder="Password">
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="r-admin">
+                        <label class="form-check-label">Admin</label>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-primary btn-sm" id="btn-save-rep">Save</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-clear-rep">Clear</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadReps() {
+    const r = await fetch('/api/reps');
+    const reps = await r.json();
+    const tbody = document.querySelector('#rep-table tbody');
+    tbody.innerHTML = '';
+    reps.forEach(rep => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${rep.id}</td><td>${rep.username}</td><td>${rep.full_name}</td>
+            <td>${rep.is_admin ? 'Yes' : 'No'}</td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm" onclick="editRep(${rep.id}, '${rep.username}', '${rep.full_name}', ${rep.is_admin})">Edit</button>
+                <button class="btn btn-outline-danger btn-sm" onclick="deleteRep(${rep.id})">Delete</button>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function editRep(id, username, fullName, isAdmin) {
+    document.getElementById('r-edit-id').value = id;
+    document.getElementById('r-username').value = username;
+    document.getElementById('r-username').disabled = true;
+    document.getElementById('r-fullname').value = fullName;
+    document.getElementById('r-password').value = '';
+    document.getElementById('r-admin').checked = isAdmin;
+    document.getElementById('rep-form-title').textContent = 'Edit Rep';
+}
+
+document.getElementById('btn-clear-rep').onclick = () => {
+    document.getElementById('r-edit-id').value = '';
+    document.getElementById('r-username').value = '';
+    document.getElementById('r-username').disabled = false;
+    document.getElementById('r-fullname').value = '';
+    document.getElementById('r-password').value = '';
+    document.getElementById('r-admin').checked = false;
+    document.getElementById('rep-form-title').textContent = 'Add Rep';
+};
+
+document.getElementById('btn-save-rep').onclick = async () => {
+    const editId = document.getElementById('r-edit-id').value;
+    const body = {
+        username: document.getElementById('r-username').value,
+        full_name: document.getElementById('r-fullname').value,
+        is_admin: document.getElementById('r-admin').checked ? 1 : 0,
+    };
+    const pw = document.getElementById('r-password').value;
+    if (pw) body.password = pw;
+
+    if (editId) {
+        await fetch(`/api/reps/${editId}`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+    } else {
+        if (!pw) { alert('Password required for new rep'); return; }
+        await fetch('/api/reps', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+    }
+    document.getElementById('btn-clear-rep').click();
+    loadReps();
+};
+
+async function deleteRep(id) {
+    if (!confirm('Delete this rep?')) return;
+    await fetch(`/api/reps/${id}`, {method: 'DELETE'});
+    loadReps();
+}
+
+loadReps();
+</script>
+{% endblock %}

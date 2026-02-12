@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title_extra %} — Dashboard{% endblock %}
+{% block content %}
+<h5 class="mt-2">Dashboard</h5>
+<div class="row g-3 mt-1" id="dash-cards">
+    <div class="col-md-3"><div class="card text-center"><div class="card-body"><h2 id="stat-leads">0</h2><small>Total Leads</small></div></div></div>
+    <div class="col-md-3"><div class="card text-center"><div class="card-body"><h2 id="stat-visits">0</h2><small>Total Visits</small></div></div></div>
+    <div class="col-md-3"><div class="card text-center"><div class="card-body"><h2 id="stat-synced" class="text-success">0</h2><small>UISP Synced</small></div></div></div>
+    <div class="col-md-3"><div class="card text-center"><div class="card-body"><h2 id="stat-failed" class="text-danger">0</h2><small>Sync Failed</small></div></div></div>
+</div>
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Leads by Stage</div>
+            <div class="card-body"><table class="table table-sm" id="stage-table"><tbody></tbody></table></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Visits by Status</div>
+            <div class="card-body"><table class="table table-sm" id="visit-table"><tbody></tbody></table></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Visits by Rep</div>
+            <div class="card-body"><table class="table table-sm" id="rep-visit-table"><tbody></tbody></table></div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadDashboard() {
+    const r = await fetch('/api/dashboard/stats');
+    const d = await r.json();
+    document.getElementById('stat-leads').textContent = d.total_leads;
+    document.getElementById('stat-visits').textContent = d.total_visits;
+    document.getElementById('stat-synced').textContent = d.uisp_synced;
+    document.getElementById('stat-failed').textContent = d.uisp_failed;
+
+    const stageLabels = {new_lead:'New Lead',contacted:'Contacted',quoted:'Quoted',won:'Won',lost:'Lost'};
+    let stageHtml = '';
+    for (const [k,v] of Object.entries(stageLabels)) {
+        stageHtml += `<tr><td>${v}</td><td>${d.stage_counts[k]||0}</td></tr>`;
+    }
+    document.querySelector('#stage-table tbody').innerHTML = stageHtml;
+
+    const visitLabels = {not_home:'Not Home',not_interested:'Not Interested',interested:'Interested',signed_up:'Signed Up'};
+    let visitHtml = '';
+    for (const [k,v] of Object.entries(visitLabels)) {
+        visitHtml += `<tr><td>${v}</td><td>${d.visit_counts[k]||0}</td></tr>`;
+    }
+    document.querySelector('#visit-table tbody').innerHTML = visitHtml;
+
+    let repHtml = '';
+    d.visits_by_rep.forEach(r => { repHtml += `<tr><td>${r.rep}</td><td>${r.count}</td></tr>`; });
+    document.querySelector('#rep-visit-table tbody').innerHTML = repHtml || '<tr><td colspan="2">No data</td></tr>';
+}
+loadDashboard();
+</script>
+{% endblock %}

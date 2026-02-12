@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNW Canvass{% block title_extra %}{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% if session.get('rep_id') %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('auth.map_view') }}">PNW Canvass</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navContent">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.map_view') }}">Map</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.leads_view') }}">Pipeline</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.territories_view') }}">Territories</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.dashboard_view') }}">Dashboard</a></li>
+                    {% if session.get('is_admin') %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.reps_view') }}">Reps</a></li>
+                    {% endif %}
+                </ul>
+                <span class="navbar-text me-3">{{ session.get('rep_name', '') }}</span>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.logout') }}">Logout</a>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <div class="container-fluid mt-2">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }} alert-dismissible fade show" role="alert">
+            {{ msg }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
