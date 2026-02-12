@@ -1,32 +1,55 @@
-const tMap = L.map('territory-map').setView([47.23, -120.5], 8);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: 19,
-}).addTo(tMap);
+mapboxgl.accessToken = MAPBOX_TOKEN;
 
-const drawnItems = new L.FeatureGroup();
-tMap.addLayer(drawnItems);
-const territoryDisplay = L.layerGroup().addTo(tMap);
-
-const drawControl = new L.Control.Draw({
-    edit: { featureGroup: drawnItems },
-    draw: {
-        polygon: true,
-        polyline: false,
-        rectangle: true,
-        circle: false,
-        marker: false,
-        circlemarker: false,
-    },
+const tMap = new mapboxgl.Map({
+    container: 'territory-map',
+    style: 'mapbox://styles/mapbox/satellite-streets-v12',
+    center: [-120.5, 47.23],
+    zoom: 8,
 });
-tMap.addControl(drawControl);
 
-tMap.on(L.Draw.Event.CREATED, function(e) {
-    drawnItems.clearLayers();
-    drawnItems.addLayer(e.layer);
-    const geo = e.layer.toGeoJSON();
-    document.getElementById('t-geojson').value = JSON.stringify(geo.geometry);
-});
+tMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+// Geolocate on load (same pattern as main map)
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            tMap.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 15 });
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 5000 }
+    );
+}
+
+// Drawing controls (admin only — draw control exists only if form is present)
+let draw = null;
+if (document.getElementById('territory-form')) {
+    draw = new MapboxDraw({
+        displayControlsDefault: false,
+        controls: { polygon: true, trash: true },
+    });
+    tMap.addControl(draw, 'top-left');
+
+    tMap.on('draw.create', updateGeoJSON);
+    tMap.on('draw.update', updateGeoJSON);
+    tMap.on('draw.delete', () => {
+        document.getElementById('t-geojson').value = '';
+    });
+}
+
+function updateGeoJSON() {
+    const data = draw.getAll();
+    if (data.features.length > 0) {
+        // Keep only the last drawn polygon
+        const lastFeature = data.features[data.features.length - 1];
+        // Remove all other features
+        data.features.forEach(f => {
+            if (f.id !== lastFeature.id) draw.delete(f.id);
+        });
+        document.getElementById('t-geojson').value = JSON.stringify(lastFeature.geometry);
+    } else {
+        document.getElementById('t-geojson').value = '';
+    }
+}
 
 async function loadRepsDropdown() {
     try {
@@ -43,22 +66,45 @@ async function loadRepsDropdown() {
     } catch(e) {}
 }
 
+let territorySourceIds = [];
+
 async function loadTerritories() {
     const r = await fetch('/api/territories');
     const territories = await r.json();
-    territoryDisplay.clearLayers();
+
+    // Remove old territory layers/sources
+    territorySourceIds.forEach(id => {
+        if (tMap.getLayer(id + '-fill')) tMap.removeLayer(id + '-fill');
+        if (tMap.getLayer(id + '-line')) tMap.removeLayer(id + '-line');
+        if (tMap.getSource(id)) tMap.removeSource(id);
+    });
+    territorySourceIds = [];
+
     const listEl = document.getElementById('territory-list');
     listEl.innerHTML = '';
 
     territories.forEach(t => {
         try {
             const geo = JSON.parse(t.polygon_geojson);
-            const geoFull = {type: 'Feature', geometry: geo};
-            const layer = L.geoJSON(geoFull, {
-                style: { color: t.color, fillOpacity: 0.15, weight: 2 },
+            const sourceId = 'territory-' + t.id;
+            territorySourceIds.push(sourceId);
+
+            tMap.addSource(sourceId, {
+                type: 'geojson',
+                data: { type: 'Feature', geometry: geo },
             });
-            layer.bindTooltip(t.name);
-            territoryDisplay.addLayer(layer);
+            tMap.addLayer({
+                id: sourceId + '-fill',
+                type: 'fill',
+                source: sourceId,
+                paint: { 'fill-color': t.color, 'fill-opacity': 0.15 },
+            });
+            tMap.addLayer({
+                id: sourceId + '-line',
+                type: 'line',
+                source: sourceId,
+                paint: { 'line-color': t.color, 'line-width': 2 },
+            });
         } catch(e) {}
 
         const div = document.createElement('div');
@@ -109,7 +155,7 @@ if (saveTerritoryBtn) {
         }
 
         document.getElementById('btn-clear-territory').click();
-        drawnItems.clearLayers();
+        if (draw) draw.deleteAll();
         loadTerritories();
     };
 }
@@ -122,7 +168,7 @@ if (clearTerritoryBtn) {
         document.getElementById('t-edit-id').value = '';
         document.getElementById('t-color').value = '#3388ff';
         document.getElementById('t-rep').value = '';
-        drawnItems.clearLayers();
+        if (draw) draw.deleteAll();
     };
 }
 
@@ -132,5 +178,8 @@ async function deleteTerritory(id) {
     loadTerritories();
 }
 
+// Wait for map style to load before adding territory layers
+tMap.on('load', () => {
+    loadTerritories();
+});
 loadRepsDropdown();
-loadTerritories();

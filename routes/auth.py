@@ -78,7 +78,7 @@ def lead_detail_view(lead_id):
 @bp.route("/territories")
 @login_required
 def territories_view():
-    return render_template("territories.html")
+    return render_template("territories.html", mapbox_token=config.MAPBOX_TOKEN)
 
 
 @bp.route("/reps")
