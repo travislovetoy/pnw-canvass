@@ -104,14 +104,14 @@ function isLightColor(hex) {
 }
 
 /* ── Active Designation ── */
-let activeDesignation = 'not_home';
+let activeDesignation = null;
 
 /* ── Build Bottom Pin Bar ── */
 function buildPinBar() {
     const bar = document.getElementById('pin-bar');
     DESIGNATIONS.forEach(d => {
         const item = document.createElement('div');
-        item.className = 'pin-item' + (d.key === activeDesignation ? ' active' : '');
+        item.className = 'pin-item';
         item.dataset.key = d.key;
 
         const textColor = isLightColor(d.color) ? '#000' : '#fff';
@@ -128,10 +128,15 @@ function buildPinBar() {
 }
 
 function selectDesignation(key) {
-    activeDesignation = key;
-    document.querySelectorAll('.pin-item').forEach(el => {
-        el.classList.toggle('active', el.dataset.key === key);
-    });
+    if (activeDesignation === key) {
+        activeDesignation = null;
+        document.querySelectorAll('.pin-item').forEach(el => el.classList.remove('active'));
+    } else {
+        activeDesignation = key;
+        document.querySelectorAll('.pin-item').forEach(el => {
+            el.classList.toggle('active', el.dataset.key === key);
+        });
+    }
 }
 
 /* ── Reverse Geocoding via Mapbox ── */
@@ -215,6 +220,8 @@ function setupMapEvents() {
 
     /* ── Map Click: Drop Pin + Save Visit ── */
     map.on('click', async (e) => {
+        if (!activeDesignation) return;
+
         const lat = e.lngLat.lat;
         const lon = e.lngLat.lng;
 
