@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 UISP_BASE_URL = os.environ.get("UISP_BASE_URL", "https://uispdev.pnw.net/crm/api/v1.0")
 UISP_API_TOKEN = os.environ.get("UISP_API_TOKEN", "")
