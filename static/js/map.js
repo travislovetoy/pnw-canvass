@@ -267,6 +267,7 @@ function openSidePanel(visit) {
     document.getElementById('lead-lat').value = visit.lat;
     document.getElementById('lead-lon').value = visit.lon;
     document.getElementById('lead-visit-id').value = visit.id;
+    document.getElementById('lead-lead-id').value = visit.lead_id || '';
 
     if (visit._addr) {
         document.getElementById('lead-street').value = visit._addr.street;
@@ -281,15 +282,27 @@ function openSidePanel(visit) {
         document.getElementById('lead-zip').value = parts[3] || '';
     }
 
-    document.getElementById('lead-first').value = '';
-    document.getElementById('lead-last').value = '';
-    document.getElementById('lead-email').value = '';
-    document.getElementById('lead-phone').value = '';
-    document.getElementById('lead-notes').value = '';
-    document.getElementById('lead-tier').value = '';
-    document.getElementById('tier-group').style.display = 'none';
-    document.querySelectorAll('input[name="service_type"]').forEach(r => r.checked = false);
-    document.getElementById('lead-save-status').textContent = '';
+    // Populate lead data if this visit has a linked lead
+    document.getElementById('lead-first').value = visit.lead_first || '';
+    document.getElementById('lead-last').value = visit.lead_last || '';
+    document.getElementById('lead-email').value = visit.lead_email || '';
+    document.getElementById('lead-phone').value = visit.lead_phone || '';
+    document.getElementById('lead-notes').value = visit.lead_notes || '';
+
+    const svcType = visit.lead_service_type || '';
+    const svcTier = visit.lead_service_tier || '';
+    document.querySelectorAll('input[name="service_type"]').forEach(r => {
+        r.checked = (r.value === svcType);
+    });
+    if (svcType === 'fiber') {
+        document.getElementById('tier-group').style.display = 'block';
+        document.getElementById('lead-tier').value = svcTier;
+    } else {
+        document.getElementById('tier-group').style.display = 'none';
+        document.getElementById('lead-tier').value = svcTier;
+    }
+
+    document.getElementById('lead-save-status').textContent = visit.lead_first ? '' : '';
 
     setTimeout(() => map.resize(), 250);
 }

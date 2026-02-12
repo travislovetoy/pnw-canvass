@@ -9,6 +9,7 @@ document.getElementById('btn-save-lead').onclick = async () => {
     }
 
     const visitId = document.getElementById('lead-visit-id').value;
+    const leadId = document.getElementById('lead-lead-id') ? document.getElementById('lead-lead-id').value : '';
     const serviceType = document.querySelector('input[name="service_type"]:checked');
     const svcType = serviceType ? serviceType.value : '';
     let svcTier = '';
@@ -41,15 +42,26 @@ document.getElementById('btn-save-lead').onclick = async () => {
     statusEl.className = 'small text-center mt-1 text-muted';
 
     try {
-        const r = await fetch('/api/leads', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
+        let r;
+        if (leadId) {
+            // Update existing lead
+            r = await fetch(`/api/leads/${leadId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+        } else {
+            // Create new lead
+            r = await fetch('/api/leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+        }
         const lead = await r.json();
 
-        // Link visit to lead
-        if (visitId) {
+        // Link visit to lead (only needed for new leads)
+        if (!leadId && visitId) {
             await fetch(`/api/visits/${visitId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -64,16 +76,9 @@ document.getElementById('btn-save-lead').onclick = async () => {
             statusEl.textContent = 'Saved, but UISP sync failed.';
             statusEl.className = 'small text-center mt-1 text-warning';
         } else {
-            statusEl.textContent = 'Lead saved!';
+            statusEl.textContent = leadId ? 'Lead updated!' : 'Lead saved!';
             statusEl.className = 'small text-center mt-1 text-success';
         }
-
-        // Clear form for next entry
-        document.getElementById('lead-first').value = '';
-        document.getElementById('lead-last').value = '';
-        document.getElementById('lead-email').value = '';
-        document.getElementById('lead-phone').value = '';
-        document.getElementById('lead-notes').value = '';
     } catch (e) {
         statusEl.textContent = 'Error saving lead.';
         statusEl.className = 'small text-center mt-1 text-danger';

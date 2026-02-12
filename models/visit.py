@@ -13,7 +13,15 @@ VALID_DESIGNATIONS = (
 
 
 def get_all_visits(filters=None):
-    query = "SELECT v.*, r.full_name AS rep_name FROM visits v LEFT JOIN reps r ON v.rep_id = r.id WHERE 1=1"
+    query = """SELECT v.*, r.full_name AS rep_name,
+        l.first_name AS lead_first, l.last_name AS lead_last,
+        l.phone AS lead_phone, l.email AS lead_email,
+        l.notes AS lead_notes, l.service_type AS lead_service_type,
+        l.service_tier AS lead_service_tier, l.id AS lead_id_ref
+        FROM visits v
+        LEFT JOIN reps r ON v.rep_id = r.id
+        LEFT JOIN leads l ON v.lead_id = l.id
+        WHERE 1=1"""
     params = []
     if filters:
         if filters.get("rep_id"):
