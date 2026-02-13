@@ -12,6 +12,7 @@ def migrate():
     # Check existing columns
     cols_visits = {row[1] for row in cur.execute("PRAGMA table_info(visits)").fetchall()}
     cols_leads = {row[1] for row in cur.execute("PRAGMA table_info(leads)").fetchall()}
+    cols_reps = {row[1] for row in cur.execute("PRAGMA table_info(reps)").fetchall()}
 
     if "designation" not in cols_visits:
         cur.execute("ALTER TABLE visits ADD COLUMN designation TEXT DEFAULT 'not_home'")
@@ -30,6 +31,12 @@ def migrate():
         print("Added 'service_tier' column to leads.")
     else:
         print("'service_tier' column already exists in leads.")
+
+    if "email" not in cols_reps:
+        cur.execute("ALTER TABLE reps ADD COLUMN email TEXT")
+        print("Added 'email' column to reps.")
+    else:
+        print("'email' column already exists in reps.")
 
     conn.commit()
     conn.close()

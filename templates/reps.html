@@ -5,7 +5,7 @@
     <div class="col-md-8">
         <h5>Sales Reps</h5>
         <table class="table table-sm table-striped" id="rep-table">
-            <thead><tr><th>ID</th><th>Username</th><th>Full Name</th><th>Admin</th><th>Actions</th></tr></thead>
+            <thead><tr><th>ID</th><th>Username</th><th>Full Name</th><th>Email</th><th>Admin</th><th>Actions</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
@@ -17,7 +17,10 @@
                     <input type="hidden" id="r-edit-id">
                     <input type="text" class="form-control form-control-sm mb-2" id="r-username" placeholder="Username" required>
                     <input type="text" class="form-control form-control-sm mb-2" id="r-fullname" placeholder="Full Name" required>
-                    <input type="password" class="form-control form-control-sm mb-2" id="r-password" placeholder="Password">
+                    <input type="email" class="form-control form-control-sm mb-2" id="r-email" placeholder="Email" required>
+                    <div id="password-group" style="display:none;">
+                        <input type="password" class="form-control form-control-sm mb-2" id="r-password" placeholder="New Password (optional)">
+                    </div>
                     <div class="form-check mb-2">
                         <input type="checkbox" class="form-check-input" id="r-admin">
                         <label class="form-check-label">Admin</label>
@@ -26,6 +29,7 @@
                         <button type="button" class="btn btn-primary btn-sm" id="btn-save-rep">Save</button>
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-clear-rep">Clear</button>
                     </div>
+                    <div id="email-status" class="mt-2" style="display:none;"></div>
                 </form>
             </div>
         </div>
@@ -41,23 +45,27 @@ async function loadReps() {
     reps.forEach(rep => {
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${rep.id}</td><td>${rep.username}</td><td>${rep.full_name}</td>
+            <td>${rep.email || ''}</td>
             <td>${rep.is_admin ? 'Yes' : 'No'}</td>
             <td>
-                <button class="btn btn-outline-primary btn-sm" onclick="editRep(${rep.id}, '${rep.username}', '${rep.full_name}', ${rep.is_admin})">Edit</button>
+                <button class="btn btn-outline-primary btn-sm" onclick="editRep(${rep.id}, '${rep.username}', '${rep.full_name}', '${rep.email || ''}', ${rep.is_admin})">Edit</button>
                 <button class="btn btn-outline-danger btn-sm" onclick="deleteRep(${rep.id})">Delete</button>
             </td>`;
         tbody.appendChild(tr);
     });
 }
 
-function editRep(id, username, fullName, isAdmin) {
+function editRep(id, username, fullName, email, isAdmin) {
     document.getElementById('r-edit-id').value = id;
     document.getElementById('r-username').value = username;
     document.getElementById('r-username').disabled = true;
     document.getElementById('r-fullname').value = fullName;
+    document.getElementById('r-email').value = email;
     document.getElementById('r-password').value = '';
     document.getElementById('r-admin').checked = isAdmin;
     document.getElementById('rep-form-title').textContent = 'Edit Rep';
+    document.getElementById('password-group').style.display = '';
+    document.getElementById('email-status').style.display = 'none';
 }
 
 document.getElementById('btn-clear-rep').onclick = () => {
@@ -65,9 +73,12 @@ document.getElementById('btn-clear-rep').onclick = () => {
     document.getElementById('r-username').value = '';
     document.getElementById('r-username').disabled = false;
     document.getElementById('r-fullname').value = '';
+    document.getElementById('r-email').value = '';
     document.getElementById('r-password').value = '';
     document.getElementById('r-admin').checked = false;
     document.getElementById('rep-form-title').textContent = 'Add Rep';
+    document.getElementById('password-group').style.display = 'none';
+    document.getElementById('email-status').style.display = 'none';
 };
 
 document.getElementById('btn-save-rep').onclick = async () => {
@@ -75,18 +86,39 @@ document.getElementById('btn-save-rep').onclick = async () => {
     const body = {
         username: document.getElementById('r-username').value,
         full_name: document.getElementById('r-fullname').value,
+        email: document.getElementById('r-email').value,
         is_admin: document.getElementById('r-admin').checked ? 1 : 0,
     };
-    const pw = document.getElementById('r-password').value;
-    if (pw) body.password = pw;
+
+    const statusEl = document.getElementById('email-status');
+    statusEl.style.display = 'none';
 
     if (editId) {
+        const pw = document.getElementById('r-password').value;
+        if (pw) body.password = pw;
         await fetch(`/api/reps/${editId}`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
     } else {
-        if (!pw) { alert('Password required for new rep'); return; }
-        await fetch('/api/reps', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+        if (!body.email) { alert('Email required for new rep'); return; }
+        const res = await fetch('/api/reps', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+        const data = await res.json();
+        if (data.email_sent) {
+            statusEl.className = 'mt-2 text-success';
+            statusEl.textContent = 'Invite sent!';
+        } else {
+            statusEl.className = 'mt-2 text-warning';
+            statusEl.textContent = 'Saved, but email failed: ' + (data.email_error || 'unknown error');
+        }
+        statusEl.style.display = '';
     }
-    document.getElementById('btn-clear-rep').click();
+    document.getElementById('r-edit-id').value = '';
+    document.getElementById('r-username').value = '';
+    document.getElementById('r-username').disabled = false;
+    document.getElementById('r-fullname').value = '';
+    document.getElementById('r-email').value = '';
+    document.getElementById('r-password').value = '';
+    document.getElementById('r-admin').checked = false;
+    document.getElementById('rep-form-title').textContent = 'Add Rep';
+    document.getElementById('password-group').style.display = 'none';
     loadReps();
 };
 

@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS reps (
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     full_name TEXT NOT NULL,
+    email TEXT,
     is_admin INTEGER NOT NULL DEFAULT 0
 );
 

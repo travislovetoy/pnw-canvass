@@ -2,7 +2,7 @@ from models.db import get_db
 
 
 def get_all_reps():
-    return get_db().execute("SELECT id, username, full_name, is_admin FROM reps ORDER BY id").fetchall()
+    return get_db().execute("SELECT id, username, full_name, email, is_admin FROM reps ORDER BY id").fetchall()
 
 
 def get_rep_by_id(rep_id):
@@ -13,19 +13,19 @@ def get_rep_by_username(username):
     return get_db().execute("SELECT * FROM reps WHERE username = ?", (username,)).fetchone()
 
 
-def create_rep(username, password_hash, full_name, is_admin=0):
+def create_rep(username, password_hash, full_name, is_admin=0, email=None):
     db = get_db()
     db.execute(
-        "INSERT INTO reps (username, password_hash, full_name, is_admin) VALUES (?, ?, ?, ?)",
-        (username, password_hash, full_name, is_admin),
+        "INSERT INTO reps (username, password_hash, full_name, email, is_admin) VALUES (?, ?, ?, ?, ?)",
+        (username, password_hash, full_name, email, is_admin),
     )
     db.commit()
     return db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
 
-def update_rep(rep_id, full_name, is_admin):
+def update_rep(rep_id, full_name, is_admin, email=None):
     db = get_db()
-    db.execute("UPDATE reps SET full_name = ?, is_admin = ? WHERE id = ?", (full_name, is_admin, rep_id))
+    db.execute("UPDATE reps SET full_name = ?, is_admin = ?, email = ? WHERE id = ?", (full_name, is_admin, email, rep_id))
     db.commit()
 
 
