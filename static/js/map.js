@@ -332,6 +332,24 @@ function closeSidePanel() {
 
 document.getElementById('btn-close-panel').onclick = closeSidePanel;
 
+/* ── Delete Pin ── */
+document.getElementById('btn-delete-visit').onclick = async () => {
+    const visitId = currentPanelVisitId;
+    if (!visitId) return;
+    if (!confirm('Delete this pin?')) return;
+
+    await fetch(`/api/visits/${visitId}`, { method: 'DELETE' });
+
+    // Remove marker from map
+    const entry = markerByVisitId[visitId];
+    if (entry) {
+        entry.marker.remove();
+        delete markerByVisitId[visitId];
+    }
+
+    closeSidePanel();
+};
+
 /* ── Service Type Toggle ── */
 document.querySelectorAll('input[name="service_type"]').forEach(radio => {
     radio.addEventListener('change', function() {
