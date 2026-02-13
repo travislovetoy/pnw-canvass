@@ -4,7 +4,7 @@ from models.lead import (
     get_all_leads, get_lead_by_id, create_lead, update_lead,
     update_lead_stage, mark_uisp_synced, mark_uisp_failed, delete_lead,
 )
-from services.uisp_client import push_lead_to_uisp
+from services.uisp_client import push_lead_to_uisp, get_service_plans
 
 bp = Blueprint("api_leads", __name__, url_prefix="/api")
 
@@ -95,3 +95,10 @@ def retry_sync(lead_id):
 def remove_lead(lead_id):
     delete_lead(lead_id)
     return jsonify({"ok": True})
+
+
+@bp.route("/service-plans", methods=["GET"])
+@login_required
+def list_service_plans():
+    plans = get_service_plans()
+    return jsonify(plans)

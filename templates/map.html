@@ -56,24 +56,11 @@
                     <input type="tel" class="form-control form-control-sm" id="lead-phone" placeholder="Phone">
                 </div>
                 <hr class="my-2">
-                <label class="form-label small mb-1">Service Type</label>
                 <div class="mb-2">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="service_type" id="svc-fiber" value="fiber">
-                        <label class="form-check-label small" for="svc-fiber">Fiber</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="service_type" id="svc-wireless" value="wireless">
-                        <label class="form-check-label small" for="svc-wireless">Wireless</label>
-                    </div>
-                </div>
-                <div id="tier-group" class="mb-2" style="display:none;">
-                    <label class="form-label small mb-1">Service Tier</label>
-                    <select class="form-select form-select-sm" id="lead-tier">
-                        <option value="">Select tier...</option>
-                        <option value="100mbps">100 Mbps</option>
-                        <option value="1gig">1 Gig</option>
-                        <option value="10gig">10 Gig</option>
+                    <label class="form-label small mb-1">Service Plan</label>
+                    <select class="form-select form-select-sm" id="lead-service-plan">
+                        <option value="">Select plan...</option>
+                        <!-- populated from UISP -->
                     </select>
                 </div>
                 <hr class="my-2">

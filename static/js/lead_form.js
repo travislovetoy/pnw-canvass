@@ -10,14 +10,9 @@ document.getElementById('btn-save-lead').onclick = async () => {
 
     const visitId = document.getElementById('lead-visit-id').value;
     const leadId = document.getElementById('lead-lead-id') ? document.getElementById('lead-lead-id').value : '';
-    const serviceType = document.querySelector('input[name="service_type"]:checked');
-    const svcType = serviceType ? serviceType.value : '';
-    let svcTier = '';
-    if (svcType === 'fiber') {
-        svcTier = document.getElementById('lead-tier').value;
-    } else if (svcType === 'wireless') {
-        svcTier = 'wireless';
-    }
+    const planSel = document.getElementById('lead-service-plan');
+    const servicePlanId = planSel.value || '';
+    const servicePlanName = planSel.selectedOptions[0] ? planSel.selectedOptions[0].textContent : '';
 
     const data = {
         first_name: first,
@@ -30,9 +25,9 @@ document.getElementById('btn-save-lead').onclick = async () => {
         lon: parseFloat(document.getElementById('lead-lon').value),
         phone: document.getElementById('lead-phone').value,
         email: document.getElementById('lead-email').value,
-        service_type: svcType,
-        service_tier: svcTier,
-        service_tags: svcType || '',
+        service_type: servicePlanName,
+        service_tier: servicePlanId,
+        service_tags: servicePlanName || '',
         notes: document.getElementById('lead-notes').value,
         organization_id: 1,
     };

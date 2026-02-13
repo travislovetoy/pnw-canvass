@@ -2,6 +2,45 @@ import requests
 from flask import current_app
 
 
+def get_service_plans():
+    """Fetch service plans from UISP CRM."""
+    base = current_app.config["UISP_BASE_URL"].rstrip("/")
+    token = current_app.config["UISP_API_TOKEN"]
+    if not token:
+        return []
+
+    try:
+        resp = requests.get(
+            f"{base}/service-plans",
+            headers={"x-auth-token": token},
+            timeout=10,
+            verify=True,
+        )
+        resp.raise_for_status()
+        plans = resp.json()
+        # Return non-archived plans with useful fields
+        result = []
+        for p in plans:
+            if p.get("archived"):
+                continue
+            # Get monthly price from periods
+            price = None
+            for period in (p.get("periods") or []):
+                if period.get("period") == 1 and period.get("enabled") and period.get("price") is not None:
+                    price = period["price"]
+                    break
+            result.append({
+                "id": p["id"],
+                "name": p["name"],
+                "downloadSpeed": p.get("downloadSpeed"),
+                "uploadSpeed": p.get("uploadSpeed"),
+                "price": price,
+            })
+        return result
+    except requests.RequestException:
+        return []
+
+
 def push_lead_to_uisp(lead):
     base = current_app.config["UISP_BASE_URL"].rstrip("/")
     token = current_app.config["UISP_API_TOKEN"]
@@ -27,10 +66,7 @@ def push_lead_to_uisp(lead):
 
     note = f"Source: PNW Canvass | Stage: {lead['pipeline_stage']}"
     if service_type:
-        service_label = service_type.capitalize()
-        if service_tier and service_tier != "wireless":
-            service_label += f" - {service_tier}"
-        note += f" | Service: {service_label}"
+        note += f" | Service Plan: {service_type}"
     if tags:
         note += f" | Tags: {', '.join(tags)}"
     if lead.get("notes"):

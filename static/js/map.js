@@ -307,18 +307,9 @@ function openSidePanel(visit) {
     document.getElementById('lead-phone').value = visit.lead_phone || '';
     document.getElementById('lead-notes').value = visit.lead_notes || '';
 
-    const svcType = visit.lead_service_type || '';
+    // Set service plan dropdown to matching plan
     const svcTier = visit.lead_service_tier || '';
-    document.querySelectorAll('input[name="service_type"]').forEach(r => {
-        r.checked = (r.value === svcType);
-    });
-    if (svcType === 'fiber') {
-        document.getElementById('tier-group').style.display = 'block';
-        document.getElementById('lead-tier').value = svcTier;
-    } else {
-        document.getElementById('tier-group').style.display = 'none';
-        document.getElementById('lead-tier').value = svcTier;
-    }
+    document.getElementById('lead-service-plan').value = svcTier;
 
     document.getElementById('lead-save-status').textContent = visit.lead_first ? '' : '';
 
@@ -350,18 +341,23 @@ document.getElementById('btn-delete-visit').onclick = async () => {
     closeSidePanel();
 };
 
-/* ── Service Type Toggle ── */
-document.querySelectorAll('input[name="service_type"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        const tierGroup = document.getElementById('tier-group');
-        if (this.value === 'fiber') {
-            tierGroup.style.display = 'block';
-        } else {
-            tierGroup.style.display = 'none';
-            document.getElementById('lead-tier').value = 'wireless';
-        }
-    });
-});
+/* ── Load UISP Service Plans ── */
+(async function loadServicePlans() {
+    try {
+        const r = await fetch('/api/service-plans');
+        const plans = await r.json();
+        const sel = document.getElementById('lead-service-plan');
+        plans.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            let label = p.name;
+            if (p.price !== null) label += ` — $${p.price}/mo`;
+            if (p.downloadSpeed) label += ` (${p.downloadSpeed >= 1000 ? (p.downloadSpeed / 1000) + 'G' : p.downloadSpeed + 'Mbps'})`;
+            opt.textContent = label;
+            sel.appendChild(opt);
+        });
+    } catch (e) {}
+})();
 
 /* ── Custom Designation Dropdown ── */
 function desigDotHTML(d) {
