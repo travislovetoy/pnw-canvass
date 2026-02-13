@@ -16,6 +16,14 @@ CREATE TABLE IF NOT EXISTS territories (
     FOREIGN KEY (assigned_rep_id) REFERENCES reps(id)
 );
 
+CREATE TABLE IF NOT EXISTS territory_reps (
+    territory_id INTEGER NOT NULL,
+    rep_id INTEGER NOT NULL,
+    PRIMARY KEY (territory_id, rep_id),
+    FOREIGN KEY (territory_id) REFERENCES territories(id),
+    FOREIGN KEY (rep_id) REFERENCES reps(id)
+);
+
 CREATE TABLE IF NOT EXISTS leads (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     first_name TEXT NOT NULL,

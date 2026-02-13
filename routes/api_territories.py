@@ -3,6 +3,7 @@ from routes.auth import login_required, admin_required
 from models.territory import (
     get_all_territories, get_territory_by_id,
     create_territory, update_territory, delete_territory,
+    assign_reps_to_territory, get_territory_reps,
 )
 
 bp = Blueprint("api_territories", __name__, url_prefix="/api")
@@ -12,7 +13,12 @@ bp = Blueprint("api_territories", __name__, url_prefix="/api")
 @login_required
 def list_territories():
     territories = get_all_territories()
-    return jsonify([dict(t) for t in territories])
+    result = []
+    for t in territories:
+        d = dict(t)
+        d["rep_ids"] = [int(x) for x in d["rep_ids"].split(",")] if d.get("rep_ids") else []
+        result.append(d)
+    return jsonify(result)
 
 
 @bp.route("/territories", methods=["POST"])
@@ -27,8 +33,13 @@ def add_territory():
         data.get("assigned_rep_id"),
         data.get("color", "#3388ff"),
     )
+    rep_ids = data.get("rep_ids", [])
+    if rep_ids:
+        assign_reps_to_territory(tid, rep_ids)
     t = get_territory_by_id(tid)
-    return jsonify(dict(t)), 201
+    d = dict(t)
+    d["rep_ids"] = rep_ids
+    return jsonify(d), 201
 
 
 @bp.route("/territories/<int:tid>", methods=["PUT"])
@@ -49,6 +60,20 @@ def edit_territory(tid):
     )
     t = get_territory_by_id(tid)
     return jsonify(dict(t))
+
+
+@bp.route("/territories/<int:tid>/reps", methods=["PUT"])
+@admin_required
+def set_territory_reps(tid):
+    data = request.get_json()
+    if not data or "rep_ids" not in data:
+        return jsonify({"error": "rep_ids required"}), 400
+    existing = get_territory_by_id(tid)
+    if not existing:
+        return jsonify({"error": "Not found"}), 404
+    assign_reps_to_territory(tid, data["rep_ids"])
+    reps = get_territory_reps(tid)
+    return jsonify({"ok": True, "reps": [dict(r) for r in reps]})
 
 
 @bp.route("/territories/<int:tid>", methods=["DELETE"])

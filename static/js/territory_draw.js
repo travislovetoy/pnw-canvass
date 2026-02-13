@@ -58,19 +58,46 @@ function updateGeoJSON() {
     }
 }
 
-async function loadRepsDropdown() {
+let allReps = [];
+
+async function loadRepsCheckboxes() {
     try {
         const r = await fetch('/api/reps');
-        const reps = await r.json();
-        const sel = document.getElementById('t-rep');
-        if (!sel) return;
-        reps.forEach(rep => {
-            const opt = document.createElement('option');
-            opt.value = rep.id;
-            opt.textContent = rep.full_name;
-            sel.appendChild(opt);
-        });
+        allReps = await r.json();
+        renderFormCheckboxes([]);
     } catch(e) {}
+}
+
+function renderFormCheckboxes(selectedIds) {
+    const container = document.getElementById('t-reps-checklist');
+    if (!container) return;
+    container.innerHTML = '';
+    allReps.forEach(rep => {
+        const checked = selectedIds.includes(rep.id) ? 'checked' : '';
+        container.innerHTML += `
+            <div class="form-check">
+                <input class="form-check-input t-rep-cb" type="checkbox" value="${rep.id}" id="t-rep-${rep.id}" ${checked}>
+                <label class="form-check-label small" for="t-rep-${rep.id}">${rep.full_name}</label>
+            </div>`;
+    });
+}
+
+function getCheckedRepIds() {
+    return Array.from(document.querySelectorAll('.t-rep-cb:checked')).map(cb => parseInt(cb.value));
+}
+
+function renderCardCheckboxes(tid, selectedIds) {
+    let html = '';
+    allReps.forEach(rep => {
+        const checked = selectedIds.includes(rep.id) ? 'checked' : '';
+        html += `
+            <div class="form-check">
+                <input class="form-check-input card-rep-cb" type="checkbox" value="${rep.id}" data-tid="${tid}" ${checked}>
+                <label class="form-check-label small">${rep.full_name}</label>
+            </div>`;
+    });
+    html += `<button class="btn btn-primary btn-sm mt-1 btn-save-card-reps" data-tid="${tid}">Save</button>`;
+    return html;
 }
 
 let territorySourceIds = [];
@@ -89,6 +116,7 @@ async function loadTerritories() {
 
     const listEl = document.getElementById('territory-list');
     listEl.innerHTML = '';
+    const isAdmin = !!document.getElementById('territory-form');
 
     territories.forEach(t => {
         try {
@@ -114,20 +142,53 @@ async function loadTerritories() {
             });
         } catch(e) {}
 
+        const repDisplay = t.rep_names || 'Unassigned';
+        const repIds = t.rep_ids || [];
+
         const div = document.createElement('div');
         div.className = 'card card-body p-2 mb-2';
-        div.innerHTML = `
+        let cardHTML = `
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:${t.color};margin-right:4px"></span>
                     <strong>${t.name}</strong>
-                    <br><small class="text-muted">${t.rep_name || 'Unassigned'}</small>
+                    <br><small class="text-muted">${repDisplay}</small>
                 </div>
-                <div>
-                    <button class="btn btn-outline-danger btn-sm" onclick="deleteTerritory(${t.id})">Del</button>
-                </div>
-            </div>`;
+                <div>`;
+        if (isAdmin) {
+            cardHTML += `<button class="btn btn-outline-primary btn-sm me-1 btn-assign-reps" data-tid="${t.id}" data-reps='${JSON.stringify(repIds)}'>Reps</button>`;
+            cardHTML += `<button class="btn btn-outline-danger btn-sm" onclick="deleteTerritory(${t.id})">Del</button>`;
+        }
+        cardHTML += `</div></div>`;
+        if (isAdmin) {
+            cardHTML += `<div class="assign-reps-panel mt-2" id="assign-panel-${t.id}" style="display:none;"></div>`;
+        }
+        div.innerHTML = cardHTML;
         listEl.appendChild(div);
+    });
+
+    // Bind assign reps buttons
+    document.querySelectorAll('.btn-assign-reps').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tid = parseInt(btn.dataset.tid);
+            const repIds = JSON.parse(btn.dataset.reps);
+            const panel = document.getElementById('assign-panel-' + tid);
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                panel.innerHTML = renderCardCheckboxes(tid, repIds);
+                panel.querySelector('.btn-save-card-reps').addEventListener('click', async () => {
+                    const checked = Array.from(panel.querySelectorAll('.card-rep-cb:checked')).map(cb => parseInt(cb.value));
+                    await fetch(`/api/territories/${tid}/reps`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ rep_ids: checked }),
+                    });
+                    loadTerritories();
+                });
+            } else {
+                panel.style.display = 'none';
+            }
+        });
     });
 }
 
@@ -140,11 +201,12 @@ if (saveTerritoryBtn) {
         if (!geojson) { alert('Draw a polygon first'); return; }
 
         const editId = document.getElementById('t-edit-id').value;
+        const repIds = getCheckedRepIds();
         const body = {
             name: name,
             polygon_geojson: geojson,
-            assigned_rep_id: document.getElementById('t-rep').value || null,
             color: document.getElementById('t-color').value,
+            rep_ids: repIds,
         };
 
         if (editId) {
@@ -152,6 +214,11 @@ if (saveTerritoryBtn) {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(body),
+            });
+            await fetch(`/api/territories/${editId}/reps`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ rep_ids: repIds }),
             });
         } else {
             await fetch('/api/territories', {
@@ -174,7 +241,7 @@ if (clearTerritoryBtn) {
         document.getElementById('t-geojson').value = '';
         document.getElementById('t-edit-id').value = '';
         document.getElementById('t-color').value = '#3388ff';
-        document.getElementById('t-rep').value = '';
+        renderFormCheckboxes([]);
         if (draw) draw.deleteAll();
     };
 }
@@ -189,4 +256,4 @@ async function deleteTerritory(id) {
 tMap.on('load', () => {
     loadTerritories();
 });
-loadRepsDropdown();
+loadRepsCheckboxes();

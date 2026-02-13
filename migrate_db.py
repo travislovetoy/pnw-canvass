@@ -38,6 +38,28 @@ def migrate():
     else:
         print("'email' column already exists in reps.")
 
+    # Create territory_reps junction table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS territory_reps (
+            territory_id INTEGER NOT NULL,
+            rep_id INTEGER NOT NULL,
+            PRIMARY KEY (territory_id, rep_id),
+            FOREIGN KEY (territory_id) REFERENCES territories(id),
+            FOREIGN KEY (rep_id) REFERENCES reps(id)
+        )
+    """)
+    print("Ensured 'territory_reps' table exists.")
+
+    # Migrate existing assigned_rep_id data into junction table
+    cur.execute("""
+        INSERT OR IGNORE INTO territory_reps (territory_id, rep_id)
+        SELECT id, assigned_rep_id FROM territories
+        WHERE assigned_rep_id IS NOT NULL
+    """)
+    migrated = cur.rowcount
+    if migrated:
+        print(f"Migrated {migrated} existing rep assignments to territory_reps.")
+
     conn.commit()
     conn.close()
     print("Migration complete.")
