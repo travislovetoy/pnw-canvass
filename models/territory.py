@@ -38,12 +38,12 @@ def assign_reps_to_territory(tid, rep_ids):
 
 def create_territory(name, polygon_geojson, assigned_rep_id=None, color="#3388ff"):
     db = get_db()
-    db.execute(
-        "INSERT INTO territories (name, polygon_geojson, assigned_rep_id, color) VALUES (?, ?, ?, ?)",
+    row = db.execute(
+        "INSERT INTO territories (name, polygon_geojson, assigned_rep_id, color) VALUES (?, ?, ?, ?) RETURNING id",
         (name, polygon_geojson, assigned_rep_id, color),
-    )
+    ).fetchone()
     db.commit()
-    return db.execute("SELECT last_insert_rowid()").fetchone()[0]
+    return row[0]
 
 
 def update_territory(tid, name, polygon_geojson, assigned_rep_id, color):

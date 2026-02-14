@@ -26,12 +26,13 @@ def get_lead_by_id(lead_id):
 
 def create_lead(data):
     db = get_db()
-    db.execute(
+    row = db.execute(
         """INSERT INTO leads
         (first_name, last_name, street1, city, state, zip, lat, lon, phone, email,
          service_tags, pipeline_stage, notes, organization_id, created_by_rep_id, territory_id,
          service_type, service_tier)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        RETURNING id""",
         (
             data["first_name"], data["last_name"],
             data.get("street1", ""), data.get("city", ""), data.get("state", "WA"),
@@ -42,9 +43,9 @@ def create_lead(data):
             data.get("created_by_rep_id"), data.get("territory_id"),
             data.get("service_type", ""), data.get("service_tier", ""),
         ),
-    )
+    ).fetchone()
     db.commit()
-    return db.execute("SELECT last_insert_rowid()").fetchone()[0]
+    return row[0]
 
 
 def update_lead(lead_id, data):

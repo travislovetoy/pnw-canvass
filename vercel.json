@@ -1,0 +1,21 @@
+{
+  "builds": [
+    {
+      "src": "app.py",
+      "use": "@vercel/python",
+      "config": {
+        "excludeFiles": "*.db"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/public/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "app.py"
+    }
+  ]
+}

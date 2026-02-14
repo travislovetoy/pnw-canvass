@@ -15,12 +15,12 @@ def get_rep_by_username(username):
 
 def create_rep(username, password_hash, full_name, is_admin=0, email=None):
     db = get_db()
-    db.execute(
-        "INSERT INTO reps (username, password_hash, full_name, email, is_admin) VALUES (?, ?, ?, ?, ?)",
+    row = db.execute(
+        "INSERT INTO reps (username, password_hash, full_name, email, is_admin) VALUES (?, ?, ?, ?, ?) RETURNING id",
         (username, password_hash, full_name, email, is_admin),
-    )
+    ).fetchone()
     db.commit()
-    return db.execute("SELECT last_insert_rowid()").fetchone()[0]
+    return row[0]
 
 
 def update_rep(rep_id, full_name, is_admin, email=None):

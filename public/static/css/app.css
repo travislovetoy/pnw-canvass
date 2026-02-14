@@ -1,0 +1,164 @@
+body { font-size: 0.9rem; }
+#map, #territory-map { width: 100%; }
+
+.pipeline-stage { background: #f8f9fa; }
+.lead-card {
+    cursor: grab;
+    margin-bottom: 6px;
+    font-size: 0.82rem;
+}
+.lead-card:active { cursor: grabbing; }
+.lead-card .badge { font-size: 0.7rem; }
+
+.drag-over { background: #d1ecf1 !important; }
+
+/* ── Bottom Pin Selector Bar ── */
+#pin-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(30, 30, 30, 0.92);
+    padding: 8px 12px;
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: #888 transparent;
+}
+#pin-bar::-webkit-scrollbar { height: 6px; }
+#pin-bar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+
+.pin-item {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: border-color 0.15s, background 0.15s;
+    min-width: 52px;
+    flex-shrink: 0;
+}
+.pin-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+.pin-item.active {
+    border-color: #fff;
+    background: rgba(255,255,255,0.15);
+}
+
+.pin-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    box-shadow: 0 0 4px rgba(0,0,0,0.4);
+    margin-bottom: 3px;
+}
+
+.pin-label {
+    font-size: 0.6rem;
+    color: #ddd;
+    text-align: center;
+    white-space: normal;
+    line-height: 1.1;
+    max-width: 56px;
+    word-wrap: break-word;
+}
+
+/* ── Side Panel ── */
+#side-panel {
+    overflow-y: auto;
+    background: #fff;
+}
+
+/* ── Custom Designation Dropdown ── */
+.desig-dropdown {
+    position: relative;
+}
+.desig-selected {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    background: #fff;
+}
+.desig-selected::after {
+    content: '\25BC';
+    font-size: 0.6rem;
+    margin-left: auto;
+    color: #666;
+}
+.desig-selected .desig-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 2px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.desig-selected .desig-dot span {
+    font-size: 7px;
+    font-weight: 700;
+    line-height: 1;
+}
+.desig-options {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    max-height: 240px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.desig-options.open {
+    display: block;
+}
+.desig-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.desig-option:hover {
+    filter: brightness(0.9);
+}
+.desig-option .desig-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 2px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.desig-option .desig-dot span {
+    font-size: 7px;
+    font-weight: 700;
+    line-height: 1;
+}

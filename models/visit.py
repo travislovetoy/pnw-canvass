@@ -52,18 +52,19 @@ def get_visit_by_id(visit_id):
 
 def create_visit(data):
     db = get_db()
-    db.execute(
+    row = db.execute(
         """INSERT INTO visits (lat, lon, address, status, designation, notes, lead_id, rep_id, territory_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        RETURNING id""",
         (
             data["lat"], data["lon"], data.get("address", ""),
             data.get("status", "not_home"), data.get("designation", "not_home"),
             data.get("notes", ""),
             data.get("lead_id"), data.get("rep_id"), data.get("territory_id"),
         ),
-    )
+    ).fetchone()
     db.commit()
-    return db.execute("SELECT last_insert_rowid()").fetchone()[0]
+    return row[0]
 
 
 def update_visit(visit_id, data):
