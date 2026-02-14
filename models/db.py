@@ -11,7 +11,7 @@ def get_db():
                 database=config.TURSO_DATABASE_URL,
                 auth_token=config.TURSO_AUTH_TOKEN,
             )
-            g.db.row_factory = libsql.Row
+            g.db.row_factory = sqlite3.Row
         else:
             g.db = sqlite3.connect(current_app.config["DB_PATH"])
             g.db.row_factory = sqlite3.Row
