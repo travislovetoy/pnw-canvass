@@ -54,6 +54,11 @@ document.getElementById('btn-save-lead').onclick = async () => {
             });
         }
         const lead = await r.json();
+        if (!r.ok) {
+            statusEl.textContent = lead.error || 'Error saving lead.';
+            statusEl.className = 'small text-center mt-1 text-danger';
+            return;
+        }
 
         // Link visit to lead (only needed for new leads)
         if (!leadId && visitId) {

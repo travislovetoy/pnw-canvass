@@ -3,6 +3,7 @@ from routes.auth import login_required
 from models.lead import (
     get_all_leads, get_lead_by_id, create_lead, update_lead,
     update_lead_stage, mark_uisp_synced, mark_uisp_failed, delete_lead,
+    find_duplicate_lead,
 )
 from services.uisp_client import push_lead_to_uisp, get_service_plans
 
@@ -28,6 +29,8 @@ def add_lead():
     if not data or not data.get("first_name") or not data.get("last_name"):
         return jsonify({"error": "first_name and last_name are required"}), 400
     data["created_by_rep_id"] = session["rep_id"]
+    if find_duplicate_lead(data):
+        return jsonify({"error": "Lead already exists with the same name, address, phone, email, and service plan."}), 409
     lead_id = create_lead(data)
     lead = get_lead_by_id(lead_id)
 

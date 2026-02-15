@@ -24,6 +24,23 @@ def get_lead_by_id(lead_id):
     return get_db().execute("SELECT * FROM leads WHERE id = ?", (lead_id,)).fetchone()
 
 
+def find_duplicate_lead(data):
+    return get_db().execute(
+        """SELECT * FROM leads
+        WHERE first_name = ? AND last_name = ? AND street1 = ?
+          AND phone = ? AND email = ? AND service_tier = ?
+        LIMIT 1""",
+        (
+            data.get("first_name", ""),
+            data.get("last_name", ""),
+            data.get("street1", ""),
+            data.get("phone", ""),
+            data.get("email", ""),
+            data.get("service_tier", ""),
+        ),
+    ).fetchone()
+
+
 def create_lead(data):
     db = get_db()
     row = db.execute(
